@@ -248,7 +248,7 @@ namespace risuwwv
 		return res;
 	}
 	
-	std::pair<int, float> timeFunction(float(*fun)(float), uint32_t lowerBound, uint32_t upperBound)
+	std::pair<float, float> timeFunction(float(*fun)(float), uint32_t lowerBound, uint32_t upperBound)
 	{
 		//xoring bits is bad because compiler is too smart for testSqrt1 and testSqrt6, so I did a sum
 		float sum = 0;
@@ -266,4 +266,27 @@ namespace risuwwv
 		return std::make_pair(sum, duration_cast<microseconds>(end - begin).count()/1000000.0f);
 	}
 	
+#ifdef __AVX2__
+	std::pair<__m256, float> timeFunction(__m256(*fun)(__m256), uint32_t lowerBound, uint32_t upperBound)
+	{
+		//xoring bits is bad because compiler is too smart for testSqrt1 and testSqrt6, so I did a sum
+		__m256 sum = _mm256_set1_ps(0.0f);
+		
+		steady_clock::time_point begin = steady_clock::now();
+
+		__m256i tmp = _mm256_set_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+
+		for (uint32_t i = lowerBound; i < upperBound; i += 8)
+		{
+			__m256 val = _mm256_castsi256_ps(_mm256_add_epi32(tmp, _mm256_set1_epi32(i)));
+
+			__m256 res = fun(val);
+
+			sum = _mm256_add_ps(sum, res);
+		}		
+			
+		steady_clock::time_point end = steady_clock::now();
+		return std::make_pair(sum, duration_cast<microseconds>(end - begin).count()/1000000.0f);	
+	}
+#endif//__AVX2__
 }//namespace risuwwv

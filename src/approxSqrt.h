@@ -44,7 +44,11 @@ namespace risuwwv
 	
 	//times the function on [bit_cast<float>(lowerBound), bit_cast<float>(upperBound)[ 
 	//and returns the cumulative sum to ensure that the loop is not optimized away
-	std::pair<int, float> timeFunction(float(*fun)(float), uint32_t lowerBound, uint32_t upperBound);
+	std::pair<float, float> timeFunction(float(*fun)(float), uint32_t lowerBound, uint32_t upperBound);
+
+#ifdef __AVX2__
+	std::pair<__m256, float> timeFunction(__m256(*fun)(__m256), uint32_t lowerBound, uint32_t upperBound);
+#endif//__AVX2__
 	
 }//namespace risuwwv
 
